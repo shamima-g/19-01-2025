@@ -563,6 +563,33 @@ Configured via PostCSS with `@tailwindcss/postcss` plugin
 - Use Tailwind utility classes
 - Define custom theme variables in `app/globals.css`
 
+## Context Clearing Between Phases
+
+When using the TDD workflow with multiple agents (ui-ux-designer → feature-planner → test-generator → implementation), clear the conversation context at these points to optimize token usage and maintain focus:
+
+**Ideal Clear Points:**
+
+| After Phase | Before Phase | When to Clear |
+|-------------|--------------|---------------|
+| DESIGN (wireframes) | PLAN (epics/stories) | After user approves wireframes |
+| PLAN (epics/stories) | SPECIFY (tests) | After user approves all stories |
+| SPECIFY (tests) | IMPLEMENT | After tests are committed |
+| IMPLEMENT | REVIEW/VERIFY | After implementation is complete |
+
+**How to Clear:**
+
+- User types `/clear` in the conversation
+- Or start a new conversation and use `/continue` to resume workflow
+
+**Why Clear:**
+
+- Resets token usage to 0
+- Prevents context window exhaustion on large features
+- Each phase's outputs are saved to files, so no work is lost
+- Agents can read saved files (wireframes, epics, stories, tests) to resume
+
+**Important:** Always wait for user approval of phase outputs before clearing. Never clear mid-approval flow.
+
 ## Quality Gate Policy
 
 ### Strict Pass/Fail Criteria
