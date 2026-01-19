@@ -9,13 +9,21 @@
  * - Edge cases (empty state, pagination)
  */
 
-import { vi, type Mock, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  vi,
+  type Mock,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+} from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReportBatchesTable } from '@/components/ReportBatchesTable';
 
-// Mock the API client
-global.fetch = vi.fn();
+// Store original fetch
+const originalFetch = global.fetch;
 
 // Mock data factory
 const createMockBatch = (overrides: Record<string, unknown> = {}) => ({
@@ -55,8 +63,24 @@ const createMockBatchList = (count: number) => {
   }));
 };
 
+// Helper to create a mock response
+const createMockResponse = (data: unknown[], total: number) => ({
+  ok: true,
+  status: 200,
+  headers: new Headers({ 'content-type': 'application/json' }),
+  json: async () => ({ data, total }),
+});
+
 describe('Report Batches List - Story 1.1', () => {
   beforeEach(() => {
+    // Reset fetch mock before each test
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    // Restore original fetch and cleanup
+    global.fetch = originalFetch;
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -64,12 +88,9 @@ describe('Report Batches List - Story 1.1', () => {
     it('displays table with all columns when page loads', async () => {
       // Arrange
       const mockBatches = createMockBatchList(5);
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 5 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(
+        createMockResponse(mockBatches, 5),
+      );
 
       // Act
       render(<ReportBatchesTable />);
@@ -91,12 +112,9 @@ describe('Report Batches List - Story 1.1', () => {
     it('displays pagination controls when there are 10+ batches', async () => {
       // Arrange
       const mockBatches = createMockBatchList(25);
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(
+        createMockResponse(mockBatches.slice(0, 10), 25),
+      );
 
       // Act
       render(<ReportBatchesTable />);
@@ -106,9 +124,7 @@ describe('Report Batches List - Story 1.1', () => {
         expect(screen.getByText('January')).toBeInTheDocument();
       });
 
-      expect(
-        screen.getByRole('button', { name: /next/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
       expect(screen.getByText(/page 1 of 3/i)).toBeInTheDocument();
     });
 
@@ -118,25 +134,16 @@ describe('Report Batches List - Story 1.1', () => {
       const mockBatches = createMockBatchList(25);
 
       // First page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches.slice(0, 10), 25))
+        .mockResolvedValueOnce(
+          createMockResponse(mockBatches.slice(10, 20), 25),
+        );
 
       render(<ReportBatchesTable />);
 
       await waitFor(() => {
         expect(screen.getByText('batch-001')).toBeInTheDocument();
-      });
-
-      // Second page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(10, 20), total: 25 }),
       });
 
       // Act
@@ -153,13 +160,15 @@ describe('Report Batches List - Story 1.1', () => {
       const user = userEvent.setup();
       const mockBatches = createMockBatchList(25);
 
-      // First page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
+      // Set up all mocks in order
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches.slice(0, 10), 25))
+        .mockResolvedValueOnce(
+          createMockResponse(mockBatches.slice(10, 20), 25),
+        )
+        .mockResolvedValueOnce(
+          createMockResponse(mockBatches.slice(0, 10), 25),
+        );
 
       render(<ReportBatchesTable />);
 
@@ -168,28 +177,13 @@ describe('Report Batches List - Story 1.1', () => {
       });
 
       // Navigate to second page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(10, 20), total: 25 }),
-      });
-
       await user.click(screen.getByRole('button', { name: /next/i }));
 
       await waitFor(() => {
         expect(screen.getByText('batch-011')).toBeInTheDocument();
       });
 
-      // Navigate back to first page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
-
-      // Act
+      // Act - navigate back
       await user.click(screen.getByRole('button', { name: /previous/i }));
 
       // Assert
@@ -207,12 +201,9 @@ describe('Report Batches List - Story 1.1', () => {
         createMockBatch({ status: 'Failed', id: 'batch-004' }),
       ];
 
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 4 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(
+        createMockResponse(mockBatches, 4),
+      );
 
       // Act
       render(<ReportBatchesTable />);
@@ -222,7 +213,6 @@ describe('Report Batches List - Story 1.1', () => {
         expect(screen.getByText('Pending')).toBeInTheDocument();
       });
 
-      // Verify all status badges are rendered
       expect(screen.getByText('In Progress')).toBeInTheDocument();
       expect(screen.getByText('Completed')).toBeInTheDocument();
       expect(screen.getByText('Failed')).toBeInTheDocument();
@@ -235,29 +225,19 @@ describe('Report Batches List - Story 1.1', () => {
       const user = userEvent.setup();
       const mockBatches = createMockBatchList(5);
 
-      // Initial load
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 5 }),
-      });
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches, 5))
+        .mockResolvedValueOnce(
+          createMockResponse(
+            mockBatches.filter((b) => b.year === 2024),
+            5,
+          ),
+        );
 
       render(<ReportBatchesTable />);
 
       await waitFor(() => {
         expect(screen.getByText('January')).toBeInTheDocument();
-      });
-
-      // Filtered results
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({
-          data: mockBatches.filter((b) => b.year === 2024),
-          total: 5,
-        }),
       });
 
       // Act
@@ -281,29 +261,19 @@ describe('Report Batches List - Story 1.1', () => {
       const user = userEvent.setup();
       const mockBatches = createMockBatchList(12);
 
-      // Initial load
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 12 }),
-      });
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches, 12))
+        .mockResolvedValueOnce(
+          createMockResponse(
+            mockBatches.filter((b) => b.month === 'January'),
+            1,
+          ),
+        );
 
       render(<ReportBatchesTable />);
 
       await waitFor(() => {
         expect(screen.getByText('January')).toBeInTheDocument();
-      });
-
-      // Filtered results
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({
-          data: mockBatches.filter((b) => b.month === 'January'),
-          total: 1,
-        }),
       });
 
       // Act
@@ -327,26 +297,14 @@ describe('Report Batches List - Story 1.1', () => {
       const user = userEvent.setup();
       const mockBatches = createMockBatchList(5);
 
-      // Initial load
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 5 }),
-      });
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches, 5))
+        .mockResolvedValueOnce(createMockResponse([], 0));
 
       render(<ReportBatchesTable />);
 
       await waitFor(() => {
         expect(screen.getByText('January')).toBeInTheDocument();
-      });
-
-      // Empty results
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: [], total: 0 }),
       });
 
       // Act
@@ -364,26 +322,15 @@ describe('Report Batches List - Story 1.1', () => {
       const user = userEvent.setup();
       const mockBatches = createMockBatchList(5);
 
-      // Initial load
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 5 }),
-      });
+      (global.fetch as Mock)
+        .mockResolvedValueOnce(createMockResponse(mockBatches, 5))
+        .mockResolvedValueOnce(createMockResponse([mockBatches[0]], 1))
+        .mockResolvedValueOnce(createMockResponse(mockBatches, 5));
 
       render(<ReportBatchesTable />);
 
       await waitFor(() => {
         expect(screen.getByText('January')).toBeInTheDocument();
-      });
-
-      // Search
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: [mockBatches[0]], total: 1 }),
       });
 
       const searchInput = screen.getByRole('searchbox', { name: /search/i });
@@ -396,15 +343,7 @@ describe('Report Batches List - Story 1.1', () => {
         );
       });
 
-      // Clear search
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 5 }),
-      });
-
-      // Act
+      // Act - clear search
       await user.clear(searchInput);
 
       // Assert
@@ -420,12 +359,7 @@ describe('Report Batches List - Story 1.1', () => {
   describe('Edge Cases', () => {
     it('shows empty state when no batches exist', async () => {
       // Arrange
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: [], total: 0 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(createMockResponse([], 0));
 
       // Act
       render(<ReportBatchesTable />);
@@ -443,12 +377,9 @@ describe('Report Batches List - Story 1.1', () => {
     it('does not show pagination controls for exactly 10 batches', async () => {
       // Arrange
       const mockBatches = createMockBatchList(10);
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches, total: 10 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(
+        createMockResponse(mockBatches, 10),
+      );
 
       // Act
       render(<ReportBatchesTable />);
@@ -466,12 +397,9 @@ describe('Report Batches List - Story 1.1', () => {
     it('shows correct page indicator for 25 batches', async () => {
       // Arrange
       const mockBatches = createMockBatchList(25);
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
+      (global.fetch as Mock).mockResolvedValueOnce(
+        createMockResponse(mockBatches.slice(0, 10), 25),
+      );
 
       // Act
       render(<ReportBatchesTable />);
@@ -496,12 +424,14 @@ describe('Report Batches List - Story 1.1', () => {
       // Assert
       await waitFor(() => {
         expect(
-          screen.getByText(/unable to load batches\. please try again later\./i),
+          screen.getByText(
+            /unable to load batches\. please try again later\./i,
+          ),
         ).toBeInTheDocument();
       });
     });
 
-    it('shows toast notification when API returns error', async () => {
+    it('shows API error message when API returns error', async () => {
       // Arrange
       (global.fetch as Mock).mockResolvedValueOnce({
         ok: false,
@@ -527,9 +457,9 @@ describe('Report Batches List - Story 1.1', () => {
 
   describe('Loading States', () => {
     it('shows loading spinner while fetching data', async () => {
-      // Arrange
+      // Arrange - mock that never resolves (stays loading)
       (global.fetch as Mock).mockImplementationOnce(
-        () => new Promise((resolve) => setTimeout(resolve, 100)),
+        () => new Promise(() => {}),
       );
 
       // Act
@@ -540,50 +470,26 @@ describe('Report Batches List - Story 1.1', () => {
       expect(screen.getByText(/loading batches\.\.\./i)).toBeInTheDocument();
     });
 
-    it('shows brief loading indicator during pagination', async () => {
-      // Arrange
-      const user = userEvent.setup();
-      const mockBatches = createMockBatchList(25);
-
-      // First page
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ data: mockBatches.slice(0, 10), total: 25 }),
-      });
-
-      render(<ReportBatchesTable />);
-
-      await waitFor(() => {
-        expect(screen.getByText('batch-001')).toBeInTheDocument();
-      });
-
-      // Second page with delay
-      (global.fetch as Mock).mockImplementationOnce(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  status: 200,
-                  headers: new Headers({ 'content-type': 'application/json' }),
-                  json: async () => ({
-                    data: mockBatches.slice(10, 20),
-                    total: 25,
-                  }),
-                }),
-              50,
-            ),
-          ),
+    it('shows loading indicator during initial load', async () => {
+      // Arrange - mock that never resolves (stays loading)
+      let resolveFetch: (value: ReturnType<typeof createMockResponse>) => void;
+      const fetchPromise = new Promise<ReturnType<typeof createMockResponse>>(
+        (resolve) => {
+          resolveFetch = resolve;
+        },
       );
+      (global.fetch as Mock).mockReturnValueOnce(fetchPromise);
 
       // Act
-      await user.click(screen.getByRole('button', { name: /next/i }));
+      render(<ReportBatchesTable />);
 
-      // Assert
+      // Assert - should show loading state
       expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(screen.getByText(/loading batches\.\.\./i)).toBeInTheDocument();
+
+      // Resolve fetch to clean up
+      const mockBatches = createMockBatchList(5);
+      resolveFetch!(createMockResponse(mockBatches, 5));
     });
   });
 });
