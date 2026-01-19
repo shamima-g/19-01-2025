@@ -563,6 +563,53 @@ Configured via PostCSS with `@tailwindcss/postcss` plugin
 - Use Tailwind utility classes
 - Define custom theme variables in `app/globals.css`
 
+## Git Branching Strategy
+
+**Create feature branches before starting work.** Never commit directly to `main` for feature development.
+
+### Branch Naming Convention
+
+| Branch Type | Pattern | Example |
+|-------------|---------|---------|
+| Feature (entire feature) | `feature/<feature-name>` | `feature/monthly-process` |
+| Epic (single epic) | `feature/epic-<N>-<short-name>` | `feature/epic-1-start-page` |
+| Bug fix | `fix/<issue-description>` | `fix/file-upload-validation` |
+| Hotfix | `hotfix/<issue-description>` | `hotfix/approval-button-crash` |
+
+### When to Create Branches
+
+**For large features with multiple epics:**
+1. Create a main feature branch from `main`: `feature/monthly-process`
+2. Optionally create epic sub-branches from the feature branch: `feature/epic-1-start-page`
+3. Merge epic branches into feature branch as each epic completes
+4. Create PR from feature branch to `main` when all epics are done
+
+**For single epics or small features:**
+1. Create a feature branch from `main`: `feature/epic-1-start-page`
+2. Work on the epic, committing regularly
+3. Create PR to `main` when epic is complete and verified
+
+### Branch Workflow with TDD Phases
+
+```
+main
+  └── feature/monthly-process (create before DESIGN phase)
+        ├── Commit: wireframes (after DESIGN)
+        ├── Commit: epics and stories (after PLAN)
+        ├── Commit: acceptance tests (after SPECIFY)
+        ├── Commits: implementation (during IMPLEMENT)
+        ├── Commit: quality gate results (after VERIFY)
+        └── PR to main (after all phases complete)
+```
+
+### Important Rules
+
+- **Create the feature branch before starting any phase** (DESIGN, PLAN, etc.)
+- **Never force push** to shared branches
+- **Keep branches up to date** with `main` via regular rebases or merges
+- **Delete branches** after successful PR merge
+- **Use descriptive commit messages** following the project's commit format
+
 ## Context Clearing Between Phases
 
 When using the TDD workflow with multiple agents (ui-ux-designer → feature-planner → test-generator → implementation), clear the conversation context at these points to optimize token usage and maintain focus:
