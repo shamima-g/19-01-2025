@@ -12,12 +12,12 @@
 ## Acceptance Tests
 
 ### Happy Path
-- [ ] Given I hover over an ISIN, when I click the info icon, then I see a popup with instrument details
-- [ ] Given I view the popup, when I see the details, then I see: Name, Asset Class, Currency, Issuer, Maturity Date, Status
+- [x] Given I hover over an ISIN, when I click the info icon, then I see a popup with instrument details
+- [x] Given I view the popup, when I see the details, then I see: Name, Asset Class, Currency, Issuer, Maturity Date, Status
 - [ ] Given I view the popup, when I click "View Full Details", then I navigate to the instrument detail page
 
 ### Edge Cases
-- [ ] Given I click outside the popup, when I click, then the popup closes
+- [x] Given I click outside the popup, when I click, then the popup closes
 
 ### Error Handling
 - [ ] Given the API fails, when I open popup, then I see "Failed to load details" in the popup

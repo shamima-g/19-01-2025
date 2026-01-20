@@ -12,16 +12,16 @@
 ## Acceptance Tests
 
 ### Happy Path
-- [ ] Given I select an instrument, when I click "Audit Trail", then I see a chronological list of all changes
-- [ ] Given I view the audit trail, when I see a change record, then I see: Date, User, Field Changed, Old Value, New Value
-- [ ] Given I view the audit trail, when I click "Export", then I download an Excel file of the audit history
+- [x] Given I select an instrument, when I click "Audit Trail", then I see a chronological list of all changes
+- [x] Given I view the audit trail, when I see a change record, then I see: Date, User, Field Changed, Old Value, New Value
+- [x] Given I view the audit trail, when I click "Export", then I download an Excel file of the audit history
 
 ### Edge Cases
-- [ ] Given an instrument has no changes, when I view audit trail, then I see "No changes recorded" message
+- [x] Given an instrument has no changes, when I view audit trail, then I see "No changes recorded" message
 - [ ] Given audit trail has 100+ entries, when I scroll, then pagination loads older records
 
 ### Error Handling
-- [ ] Given the API fails, when I load audit trail, then I see "Failed to load audit trail. Please try again."
+- [x] Given the API fails, when I load audit trail, then I see "Failed to load audit trail. Please try again."
 
 ## Implementation Notes
 - API: GET /v1/instruments/{id}/audit-trail

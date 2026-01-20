@@ -12,15 +12,15 @@
 ## Acceptance Tests
 
 ### Happy Path
-- [ ] Given I select an instrument, when I click "History", then I see a table with Date, Name, Asset Class, Currency, Status columns
-- [ ] Given I view history, when I see multiple snapshots, then they are sorted by date descending
-- [ ] Given I select two snapshots, when I click "Compare", then I see a side-by-side diff view
+- [x] Given I select an instrument, when I click "History", then I see a table with Date, Name, Asset Class, Currency, Status columns
+- [x] Given I view history, when I see multiple snapshots, then they are sorted by date descending
+- [x] Given I select two snapshots, when I click "Compare", then I see a side-by-side diff view
 
 ### Edge Cases
-- [ ] Given an instrument has no historical snapshots, when I view history, then I see "No historical data available"
+- [x] Given an instrument has no historical snapshots, when I view history, then I see "No historical data available"
 
 ### Error Handling
-- [ ] Given the API fails, when I load history, then I see "Failed to load history. Please try again."
+- [x] Given the API fails, when I load history, then I see "Failed to load history. Please try again."
 
 ## Implementation Notes
 - API: GET /v1/instruments/{id}/history
