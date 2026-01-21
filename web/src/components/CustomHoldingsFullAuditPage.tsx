@@ -84,14 +84,22 @@ export function CustomHoldingsFullAuditPage() {
           page: params.page ?? currentPage,
           pageSize: PAGE_SIZE,
         });
-        setAuditRecords(response.data);
-        setTotalRecords(response.total);
+        // Ensure audit records is always an array
+        setAuditRecords(Array.isArray(response?.data) ? response.data : []);
+        setTotalRecords(response?.total ?? 0);
       } catch (err) {
         console.error('Failed to load audit records:', err);
-        if (
-          err instanceof Error &&
-          err.message.includes('Database connection failed')
-        ) {
+        // Check both message and details for specific error messages
+        const errorMessage = err instanceof Error ? err.message : '';
+        const errorDetails =
+          err && typeof err === 'object' && 'details' in err
+            ? (err as { details: string[] }).details
+            : [];
+        const hasDbError =
+          errorMessage.includes('Database connection failed') ||
+          errorDetails.some((d) => d.includes('Database connection failed'));
+
+        if (hasDbError) {
           setError('Database connection failed');
         } else {
           setError('Failed to load audit records');
@@ -108,9 +116,11 @@ export function CustomHoldingsFullAuditPage() {
     async function loadPortfolios() {
       try {
         const data = await getPortfolios();
-        setPortfolios(data);
+        // Ensure portfolios is always an array
+        setPortfolios(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to load portfolios:', err);
+        setPortfolios([]);
       }
     }
     loadPortfolios();
@@ -163,9 +173,7 @@ export function CustomHoldingsFullAuditPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <h1>Custom Holdings Audit Trail</h1>
-        </CardTitle>
+        <CardTitle>Custom Holdings Audit Trail</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Filters */}

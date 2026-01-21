@@ -84,6 +84,7 @@ export function CustomHoldingAuditDialog({
     if (isOpen && holdingId) {
       loadAuditTrail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, holdingId]);
 
   const loadAuditTrail = async () => {
@@ -95,10 +96,17 @@ export function CustomHoldingAuditDialog({
       setAuditRecords(records);
     } catch (err) {
       console.error('Failed to load audit trail:', err);
-      if (
-        err instanceof Error &&
-        err.message.includes('Database connection failed')
-      ) {
+      // Check both message and details for specific error messages
+      const errorMessage = err instanceof Error ? err.message : '';
+      const errorDetails =
+        err && typeof err === 'object' && 'details' in err
+          ? (err as { details: string[] }).details
+          : [];
+      const hasDbError =
+        errorMessage.includes('Database connection failed') ||
+        errorDetails.some((d) => d.includes('Database connection failed'));
+
+      if (hasDbError) {
         setError('Database connection failed');
       } else {
         setError('Failed to load audit trail');
@@ -137,9 +145,7 @@ export function CustomHoldingAuditDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            <h2>Audit Trail</h2>
-          </DialogTitle>
+          <DialogTitle>Audit Trail</DialogTitle>
           {holding && (
             <p className="text-sm text-muted-foreground">
               Portfolio: {holding.portfolioCode} | ISIN: {holding.isin}
