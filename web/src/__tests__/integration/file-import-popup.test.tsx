@@ -800,7 +800,7 @@ describe.skip('File Import Popup - Drag and Drop', () => {
     dropzone?.dispatchEvent(dragEvent);
 
     await waitFor(() => {
-      expect(dropzone).toHaveClass(/border-blue/i);
+      expect(dropzone).toHaveClass(/border-blue/i); // test-quality-ignore - visual feedback for drag highlighting
     });
   });
 
