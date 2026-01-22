@@ -169,11 +169,17 @@ async function handleErrorResponse(
   try {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-      const errorData = (await response.json()) as DefaultResponse;
+      const errorData = (await response.json()) as DefaultResponse & {
+        message?: string;
+      };
 
       if (errorData.Messages && errorData.Messages.length > 0) {
         errorMessages = errorData.Messages;
         defaultMessage = errorMessages[0];
+      } else if (errorData.message) {
+        // Handle single message field (common in many APIs)
+        defaultMessage = errorData.message;
+        errorMessages = [errorData.message];
       } else if (errorData.MessageType) {
         defaultMessage = `${errorData.MessageType}: ${defaultMessage}`;
       }
