@@ -6,11 +6,15 @@
  */
 
 import { MONTHLY_PROCESS_API_URL } from '@/lib/utils/constants';
+import { get, post } from './client';
 import type {
   FileUploadResponse,
   FileReimportResponse,
   PortfolioFileGridResponse,
   OtherFileGridResponse,
+  PortfolioFilesGridResponse,
+  FileErrorResponse,
+  CancelImportResponse,
 } from '@/types/file-import';
 
 /**
@@ -196,4 +200,42 @@ export async function getOtherFiles(
   }
 
   return response.json();
+}
+
+/**
+ * Get portfolio files grid for Story 2.1
+ */
+export async function getPortfolioFilesGrid(
+  batchId: string,
+): Promise<PortfolioFilesGridResponse> {
+  return get<PortfolioFilesGridResponse>(
+    `/v1/report-batches/${batchId}/portfolio-files`,
+  );
+}
+
+/**
+ * Get file errors for Story 2.4
+ */
+export async function getFileErrors(
+  batchId: string,
+  fileId: string,
+  page: number = 1,
+  severity?: string,
+): Promise<FileErrorResponse> {
+  return get<FileErrorResponse>(
+    `/v1/report-batches/${batchId}/portfolio-files/${fileId}/errors`,
+    { page, severity },
+  );
+}
+
+/**
+ * Cancel an in-progress file import for Story 2.5
+ */
+export async function cancelFileImport(
+  batchId: string,
+  fileId: string,
+): Promise<CancelImportResponse> {
+  return post<CancelImportResponse>(
+    `/v1/report-batches/${batchId}/portfolio-files/${fileId}/cancel`,
+  );
 }

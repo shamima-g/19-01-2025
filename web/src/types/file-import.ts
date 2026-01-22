@@ -39,6 +39,82 @@ export interface PortfolioFileGridResponse {
   total: number;
 }
 
+/**
+ * Portfolio file grid data structure for Story 2.1
+ * Grid displays portfolios as rows with 7 file type columns
+ */
+export interface PortfolioFileStatusData {
+  status: FileStatus;
+  fileName?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  errorCount?: number;
+  fileId?: string;
+}
+
+export interface PortfolioRow {
+  portfolioId: string;
+  portfolioName: string;
+  files: {
+    holdings: PortfolioFileStatusData;
+    transactions: PortfolioFileStatusData;
+    cashFlow: PortfolioFileStatusData;
+    benchmark: PortfolioFileStatusData;
+    performance: PortfolioFileStatusData;
+    risk: PortfolioFileStatusData;
+    compliance: PortfolioFileStatusData;
+  };
+}
+
+export interface PortfolioFilesGridData {
+  portfolios: PortfolioRow[];
+  batchId: string;
+  batchName: string;
+}
+
+/**
+ * API response for portfolio files grid
+ */
+export interface PortfolioFilesGridResponse {
+  portfolios: PortfolioRow[];
+}
+
+/**
+ * File error types for Story 2.4
+ */
+export type ErrorSeverity = 'Critical' | 'Warning' | 'Info';
+
+export interface FileError {
+  rowNumber: number;
+  column: string;
+  message: string;
+  severity: ErrorSeverity;
+  originalValue?: string;
+  expectedFormat?: string;
+}
+
+export interface FileErrorSummary {
+  totalErrors: number;
+  criticalCount: number;
+  warningCount: number;
+  infoCount: number;
+}
+
+export interface FileErrorResponse {
+  summary: FileErrorSummary;
+  errors: FileError[];
+  hasMore: boolean;
+}
+
+/**
+ * Cancel import response for Story 2.5
+ */
+export interface CancelImportResponse {
+  success: boolean;
+  message: string;
+  fileStatus: 'Pending' | 'Canceled';
+}
+
 export interface FileUploadRequest {
   file: File;
   validateOnly?: boolean;
