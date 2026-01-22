@@ -1613,10 +1613,8 @@ describe('Story 8.9: Reject at Level 3 (Final)', () => {
       });
 
       const reasonField = screen.getByLabelText(/reason/i);
-      await user.type(
-        reasonField,
-        'Critical data integrity issue found in portfolio reconciliation',
-      );
+      // Use shorter reason (min 20 chars) to avoid timeout
+      await user.type(reasonField, 'Data issues in reports');
 
       const submitButton = screen.getByRole('button', {
         name: /submit|confirm/i,
@@ -1708,10 +1706,8 @@ describe('Story 8.9: Reject at Level 3 (Final)', () => {
       });
 
       const reasonField = screen.getByLabelText(/reason/i);
-      await user.type(
-        reasonField,
-        'Critical issues require full review and resubmission',
-      );
+      // Use shorter reason (min 20 chars) to avoid timeout
+      await user.type(reasonField, 'Full review required now');
 
       const submitButton = screen.getByRole('button', {
         name: /submit|confirm/i,
