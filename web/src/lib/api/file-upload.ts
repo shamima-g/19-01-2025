@@ -239,3 +239,19 @@ export async function cancelFileImport(
     `/v1/report-batches/${batchId}/portfolio-files/${fileId}/cancel`,
   );
 }
+
+// ============================================================================
+// Epic 3: Other Files Import Dashboard - Stub functions (to be implemented)
+// ============================================================================
+
+/**
+ * Re-import other file for Story 3.4
+ * @stub This is a placeholder - implementation pending
+ */
+export async function reimportOtherFile(
+  _batchId: string,
+  _fileId: string,
+  _file: File,
+): Promise<{ success: boolean; message?: string }> {
+  throw new Error('Not implemented: reimportOtherFile - Epic 3 pending');
+}
