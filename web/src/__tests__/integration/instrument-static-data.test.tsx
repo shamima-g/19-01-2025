@@ -125,7 +125,7 @@ const setupFetchMock = (instrumentsResponse: unknown[], total: number) => {
   });
 };
 
-describe.skip('Instrument Static Data - Story 4.1: View Instruments Grid', () => {
+describe('Instrument Static Data - Story 4.1: View Instruments Grid', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
     localStorageMock.clear();
@@ -192,15 +192,17 @@ describe.skip('Instrument Static Data - Story 4.1: View Instruments Grid', () =>
 
       render(<InstrumentsPage />);
 
+      // Wait for data to load (use getAllByText since ISINs repeat in mock data)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       // Act
       const searchInput = screen.getByRole('searchbox', { name: /search/i });
       await user.type(searchInput, 'Apple');
 
-      // Assert - wait for debounced search
+      // Assert - wait for debounced search (200ms debounce + typing time)
       await waitFor(
         () => {
           expect(global.fetch).toHaveBeenCalledWith(
@@ -208,7 +210,7 @@ describe.skip('Instrument Static Data - Story 4.1: View Instruments Grid', () =>
             expect.anything(),
           );
         },
-        { timeout: 500 },
+        { timeout: 1000 },
       );
     });
 
@@ -259,9 +261,10 @@ describe.skip('Instrument Static Data - Story 4.1: View Instruments Grid', () =>
       // Act
       render(<InstrumentsPage />);
 
-      // Assert
+      // Assert - wait for data to load (use getAllByText since ISIN repeats in mock data)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
@@ -289,7 +292,7 @@ describe.skip('Instrument Static Data - Story 4.1: View Instruments Grid', () =>
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.2: Add New Instrument', () => {
+describe('Instrument Static Data - Story 4.2: Add New Instrument', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
     vi.clearAllMocks();
@@ -507,7 +510,7 @@ describe.skip('Instrument Static Data - Story 4.2: Add New Instrument', () => {
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.3: Update Existing Instrument', () => {
+describe('Instrument Static Data - Story 4.3: Update Existing Instrument', () => {
   const mockInstrument = {
     id: 'inst-001',
     isin: 'US0378331005',
@@ -745,7 +748,7 @@ describe.skip('Instrument Static Data - Story 4.3: Update Existing Instrument', 
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.4: Upload Instruments File', () => {
+describe('Instrument Static Data - Story 4.4: Upload Instruments File', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
     vi.clearAllMocks();
@@ -993,9 +996,17 @@ describe.skip('Instrument Static Data - Story 4.4: Upload Instruments File', () 
       const uploadButton = screen.getByRole('button', { name: /upload file/i });
       await user.click(uploadButton);
 
-      // Act
-      const fileInput = screen.getByLabelText(/select file/i);
-      await user.upload(fileInput, file);
+      // Wait for dialog to open and file input to be available
+      const fileInput = (await screen.findByLabelText(
+        /select file/i,
+      )) as HTMLInputElement;
+
+      // Act - manually set files and trigger change event (workaround for accept attribute in jsdom)
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+      });
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
 
       // Assert
       await waitFor(() => {
@@ -1042,7 +1053,7 @@ describe.skip('Instrument Static Data - Story 4.4: Upload Instruments File', () 
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.5: View Instrument Audit Trail', () => {
+describe('Instrument Static Data - Story 4.5: View Instrument Audit Trail', () => {
   const mockAuditTrail = [
     {
       id: 'audit-001',
@@ -1178,9 +1189,10 @@ describe.skip('Instrument Static Data - Story 4.5: View Instrument Audit Trail',
       // Act
       render(<InstrumentAuditTrail instrumentId="inst-001" />);
 
-      // Assert
+      // Assert - wait for data to load (use getAllByText since usernames repeat)
       await waitFor(() => {
-        expect(screen.getByText('user0')).toBeInTheDocument();
+        const cells = screen.getAllByText('user0');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
@@ -1205,7 +1217,7 @@ describe.skip('Instrument Static Data - Story 4.5: View Instrument Audit Trail',
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.6: View Instrument History', () => {
+describe('Instrument Static Data - Story 4.6: View Instrument History', () => {
   const mockHistory = [
     {
       id: 'history-001',
@@ -1260,9 +1272,9 @@ describe.skip('Instrument Static Data - Story 4.6: View Instrument History', () 
       // Act
       render(<InstrumentHistory instrumentId="inst-001" />);
 
-      // Assert
+      // Assert - dates are formatted as MM/DD/YYYY
       await waitFor(() => {
-        const dates = screen.getAllByText(/2024-01-/);
+        const dates = screen.getAllByText(/\d{2}\/\d{2}\/2024/);
         expect(dates[0]).toHaveTextContent('01/15/2024'); // Most recent first
         expect(dates[1]).toHaveTextContent('01/01/2024');
       });
@@ -1334,7 +1346,7 @@ describe.skip('Instrument Static Data - Story 4.6: View Instrument History', () 
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () => {
+describe('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
     vi.clearAllMocks();
@@ -1350,22 +1362,31 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
       // Arrange
       const user = userEvent.setup();
       const mockInstruments = createMockInstrumentsList(5);
-      setupFetchMock(mockInstruments, 5);
 
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({
-          'content-type':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        }),
-        blob: async () => new Blob(['mock-excel-data']),
-      });
+      // Chain mockResolvedValueOnce: first for page load, second for export
+      (global.fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: mockInstruments, total: 5 }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({
+            'content-type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
+          blob: async () => new Blob(['mock-excel-data']),
+        });
 
       render(<InstrumentsPage />);
 
+      // Wait for data to load (use getAllByText since ISINs repeat)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       // Act
@@ -1388,22 +1409,31 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
       // The actual file parsing would require E2E testing
       const user = userEvent.setup();
       const mockInstruments = createMockInstrumentsList(5);
-      setupFetchMock(mockInstruments, 5);
 
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({
-          'content-type':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        }),
-        blob: async () => new Blob(['mock-excel-data']),
-      });
+      // Chain mockResolvedValueOnce: first for page load, second for export
+      (global.fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: mockInstruments, total: 5 }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({
+            'content-type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
+          blob: async () => new Blob(['mock-excel-data']),
+        });
 
       render(<InstrumentsPage />);
 
+      // Wait for data to load (use getAllByText since ISINs repeat)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       const exportButton = screen.getByRole('button', {
@@ -1438,17 +1468,23 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
         }),
       ];
 
-      setupFetchMock(mockIncompleteInstruments, 2);
-
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({
-          'content-type':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        }),
-        blob: async () => new Blob(['mock-excel-data']),
-      });
+      // Chain mockResolvedValueOnce: first for page load, second for export
+      (global.fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: mockIncompleteInstruments, total: 2 }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({
+            'content-type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
+          blob: async () => new Blob(['mock-excel-data']),
+        });
 
       render(<InstrumentsPage />);
 
@@ -1477,22 +1513,31 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
       // Arrange
       const user = userEvent.setup();
       const mockInstruments = createMockInstrumentsList(5);
-      setupFetchMock(mockInstruments, 5);
 
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({
-          Messages: ['No incomplete instruments found'],
-        }),
-      });
+      // Chain mockResolvedValueOnce: first for page load, second for export (404)
+      (global.fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: mockInstruments, total: 5 }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            Messages: ['No incomplete instruments found'],
+          }),
+        });
 
       render(<InstrumentsPage />);
 
+      // Wait for data to load (use getAllByText since ISINs repeat)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       // Act
@@ -1515,14 +1560,23 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
       // Arrange
       const user = userEvent.setup();
       const mockInstruments = createMockInstrumentsList(5);
-      setupFetchMock(mockInstruments, 5);
 
-      (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
+      // Chain: first for page load (success), second for export (error)
+      (global.fetch as Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: mockInstruments, total: 5 }),
+        })
+        .mockRejectedValueOnce(new Error('Network error'));
 
       render(<InstrumentsPage />);
 
+      // Wait for data to load (use getAllByText since ISINs repeat)
       await waitFor(() => {
-        expect(screen.getByText('US0378331005')).toBeInTheDocument();
+        const cells = screen.getAllByText('US0378331005');
+        expect(cells.length).toBeGreaterThan(0);
       });
 
       // Act
@@ -1541,7 +1595,7 @@ describe.skip('Instrument Static Data - Story 4.7: Export Incomplete ISINs', () 
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.8: View Instrument Popup Details', () => {
+describe('Instrument Static Data - Story 4.8: View Instrument Popup Details', () => {
   const mockInstrument = createMockInstrument();
 
   beforeEach(() => {
@@ -1687,7 +1741,7 @@ describe.skip('Instrument Static Data - Story 4.8: View Instrument Popup Details
   });
 });
 
-describe.skip('Instrument Static Data - Story 4.9: Toggle Grid Columns', () => {
+describe('Instrument Static Data - Story 4.9: Toggle Grid Columns', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
     localStorageMock.clear();

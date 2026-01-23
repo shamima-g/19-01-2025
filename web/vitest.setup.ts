@@ -1,6 +1,53 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom/vitest';
 
+// Polyfill for Pointer Capture - required by Radix UI Select component
+if (typeof Element.prototype.hasPointerCapture !== 'function') {
+  Element.prototype.hasPointerCapture = function (_pointerId: number): boolean {
+    return false;
+  };
+}
+if (typeof Element.prototype.setPointerCapture !== 'function') {
+  Element.prototype.setPointerCapture = function (_pointerId: number): void {
+    // Do nothing
+  };
+}
+if (typeof Element.prototype.releasePointerCapture !== 'function') {
+  Element.prototype.releasePointerCapture = function (
+    _pointerId: number,
+  ): void {
+    // Do nothing
+  };
+}
+if (typeof Element.prototype.scrollIntoView !== 'function') {
+  Element.prototype.scrollIntoView = function (): void {
+    // Do nothing
+  };
+}
+
+// Polyfill for ResizeObserver - required by Radix UI components like Tooltip
+if (typeof ResizeObserver === 'undefined') {
+  global.ResizeObserver = class ResizeObserver {
+    private callback: ResizeObserverCallback;
+
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+
+    observe() {
+      // Do nothing
+    }
+
+    unobserve() {
+      // Do nothing
+    }
+
+    disconnect() {
+      // Do nothing
+    }
+  };
+}
+
 // Polyfill for Web APIs needed by Next.js
 // These are required for testing files that import from 'next/server'
 if (typeof Request === 'undefined') {

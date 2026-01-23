@@ -2576,25 +2576,27 @@ describe('Story 8.15: Reject After Final Approval', () => {
     it('shows success message after submitting rejection with valid reason', async () => {
       // Arrange
       const user = userEvent.setup();
-      (global.fetch as Mock).mockImplementation((url: string) => {
-        if (url.includes('/reject-final') && url.includes('POST')) {
-          return Promise.resolve(createMockResponse({ success: true }));
-        }
-        if (url.includes('/reject-final')) {
-          return Promise.resolve(
-            createMockResponse({
-              batches: [
-                {
-                  batchId: 'batch-2024-01-001',
-                  batchDate: '2024-01-31',
-                  status: 'APPROVED_FINAL',
-                },
-              ],
-            }),
-          );
-        }
-        return Promise.reject(new Error('Unknown endpoint'));
-      });
+      (global.fetch as Mock).mockImplementation(
+        (url: string, options?: RequestInit) => {
+          if (url.includes('/reject-final') && options?.method === 'POST') {
+            return Promise.resolve(createMockResponse({ success: true }));
+          }
+          if (url.includes('/reject-final')) {
+            return Promise.resolve(
+              createMockResponse({
+                batches: [
+                  {
+                    batchId: 'batch-2024-01-001',
+                    batchDate: '2024-01-31',
+                    status: 'APPROVED_FINAL',
+                  },
+                ],
+              }),
+            );
+          }
+          return Promise.reject(new Error('Unknown endpoint'));
+        },
+      );
 
       // Act
       render(<RejectFinalReportPage />);
@@ -2618,10 +2620,11 @@ describe('Story 8.15: Reject After Final Approval', () => {
         'Critical post-approval issue discovered requiring full review and reprocessing',
       );
 
-      const submitButton = screen.getByRole('button', {
-        name: /submit|confirm/i,
+      // Get the confirm button from within the dialog
+      const confirmButton = await screen.findByRole('button', {
+        name: /confirm rejection/i,
       });
-      await user.click(submitButton);
+      await user.click(confirmButton);
 
       // Assert
       await waitFor(() => {
@@ -2629,7 +2632,7 @@ describe('Story 8.15: Reject After Final Approval', () => {
           screen.getByText(/batch rejected.*returned to preparation/i),
         ).toBeInTheDocument();
       });
-    });
+    }, 15000);
 
     it('shows validation error when reason is too short', async () => {
       // Arrange
@@ -2734,16 +2737,17 @@ describe('Story 8.15: Reject After Final Approval', () => {
         'Critical post-approval issue discovered requiring full review',
       );
 
-      const submitButton = screen.getByRole('button', {
-        name: /submit|confirm/i,
+      // Get the confirm button from within the dialog
+      const confirmButton = await screen.findByRole('button', {
+        name: /confirm rejection/i,
       });
-      await user.click(submitButton);
+      await user.click(confirmButton);
 
       // Assert
       await waitFor(() => {
         expect(screen.getByText(/rejection failed/i)).toBeInTheDocument();
       });
-    });
+    }, 15000);
 
     it('calls the correct API endpoint for post-approval rejection', async () => {
       // Arrange

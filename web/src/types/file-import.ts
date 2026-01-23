@@ -151,3 +151,59 @@ export interface OtherFileGridResponse {
   files: OtherFile[];
   total: number;
 }
+
+/**
+ * Epic 3: Other Files Dashboard Types
+ */
+
+export type BloombergFileType =
+  | 'SecurityMaster'
+  | 'Prices'
+  | 'CreditRatings'
+  | 'Analytics';
+
+export type CustodianFileType =
+  | 'HoldingsReconciliation'
+  | 'TransactionReconciliation'
+  | 'CashReconciliation';
+
+export type AdditionalFileType =
+  | 'FXRates'
+  | 'CustomBenchmarks'
+  | 'MarketCommentary';
+
+export interface OtherFileStatusData {
+  fileType: string;
+  status: FileStatus;
+  fileName: string | null;
+  uploadedBy: string | null;
+  uploadedAt: string | null;
+  errorCount: number;
+  fileId?: string;
+}
+
+export interface OtherFilesResponse {
+  files: OtherFileStatusData[];
+}
+
+/**
+ * File type display names for UI
+ */
+export const BLOOMBERG_FILE_TYPES: Record<BloombergFileType, string> = {
+  SecurityMaster: 'Security Master',
+  Prices: 'Prices',
+  CreditRatings: 'Credit Ratings',
+  Analytics: 'Analytics',
+};
+
+export const CUSTODIAN_FILE_TYPES: Record<CustodianFileType, string> = {
+  HoldingsReconciliation: 'Holdings Reconciliation',
+  TransactionReconciliation: 'Transaction Reconciliation',
+  CashReconciliation: 'Cash Reconciliation',
+};
+
+export const ADDITIONAL_FILE_TYPES: Record<AdditionalFileType, string> = {
+  FXRates: 'FX Rates',
+  CustomBenchmarks: 'Custom Benchmarks',
+  MarketCommentary: 'Market Commentary',
+};

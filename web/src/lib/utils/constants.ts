@@ -22,6 +22,14 @@ export const MONTHLY_PROCESS_API_URL =
   'http://localhost:10003/investinsight/monthly-process';
 
 /**
+ * Static Data API base URL
+ * Used for instrument static data management (Epic 4) and market data (Epic 5)
+ */
+export const STATIC_DATA_API_URL =
+  process.env.NEXT_PUBLIC_STATIC_DATA_API_URL ||
+  'http://localhost:10004/investinsight/static-data';
+
+/**
  * Default pagination settings
  * Customize based on your application's needs
  */
